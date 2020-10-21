@@ -1,0 +1,84 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'maven-publish'
+
+android {
+  compileSdkVersion 27
+
+  defaultConfig {
+    minSdkVersion 19
+    targetSdkVersion 27
+    versionCode 1
+    versionName "1.0"
+
+    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+  }
+
+}
+
+dependencies {
+  implementation 'com.android.support:appcompat-v7:27.1.1'
+  implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+  implementation 'io.reactivex.rxjava2:rxjava:2.2.8'
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+  implementation project(':common')
+
+  testImplementation 'junit:junit:4.12'
+  androidTestImplementation 'com.android.support.test:runner:1.0.2'
+  androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+
+def libraryGroupId = 'io.blockv.sdk'
+def libraryArtifactId = 'faceview'
+def libraryVersion = '3.0.1'
+
+task sourceJar(type: Jar) {
+  from android.sourceSets.main.java.srcDirs
+  classifier "sources"
+}
+
+publishing {
+  publications {
+    faceview(MavenPublication) {
+      groupId libraryGroupId
+      artifactId libraryArtifactId
+      version libraryVersion
+      artifact(sourceJar)
+      artifact("$buildDir/outputs/aar/${artifactId}-release.aar")
+      pom.withXml {
+        def dependenciesNode = asNode().appendNode('dependencies')
+        def dependencyNode = dependenciesNode.appendNode('dependency')
+        dependencyNode.appendNode('groupId', 'io.blockv.sdk')
+        dependencyNode.appendNode('artifactId', 'common')
+        dependencyNode.appendNode('version', '[2.0.0,3.0.0)')
+        def versionPlugin = asNode()
+          .appendNode('build')
+          .appendNode('plugins')
+          .appendNode('plugin')
+        versionPlugin.appendNode('groupId', 'org.codehaus.mojo')
+        versionPlugin.appendNode('artifactId', 'versions-maven-plugin')
+        versionPlugin.appendNode('version', '2.1')
+        def configuration = versionPlugin.appendNode('configuration')
+        configuration.appendNode('rulesUri', 'https://raw.githubusercontent.com/BLOCKvIO/android-sdk/master/maven-rules.xml')
+      }
+    }
+  }
+  repositories {
+    maven {
+      url "https://maven.blockv.io/artifactory/BLOCKv/"
+      credentials {
+        username = "${blockv_artifactory_username}"
+        password = "${blockv_artifactory_password}"
+      }
+    }
+  }
+}
