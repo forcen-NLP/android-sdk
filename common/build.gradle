@@ -1,0 +1,112 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'maven-publish'
+
+android {
+  compileSdkVersion 27
+
+  defaultConfig {
+    minSdkVersion 19
+    targetSdkVersion 27
+    versionCode 1
+    versionName "1.0"
+
+    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+  }
+
+}
+
+dependencies {
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
+  implementation 'com.neovisionaries:nv-websocket-client:2.5'
+  implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+  implementation 'io.reactivex.rxjava2:rxjava:2.2.8'
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+  implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+  implementation 'com.android.support:appcompat-v7:27.1.1'
+
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'com.github.cbismuth:junit-repeat-rule:1.1.2'
+  testImplementation 'org.json:json:20140107'
+  testImplementation 'org.awaitility:awaitility-kotlin:3.1.1'
+  androidTestImplementation 'com.android.support.test:runner:1.0.2'
+  androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+  androidTestImplementation 'org.awaitility:awaitility-kotlin:3.1.1'
+  androidTestImplementation 'com.android.support.test:runner:1.0.2'
+  androidTestUtil 'com.android.support.test:orchestrator:1.0.2'
+}
+repositories {
+  mavenCentral()
+}
+def libraryGroupId = 'io.blockv.sdk'
+def libraryArtifactId = 'common'
+def libraryVersion = '2.0.3'
+
+task sourceJar(type: Jar) {
+  from android.sourceSets.main.java.srcDirs
+  classifier "sources"
+}
+
+publishing {
+  publications {
+    common(MavenPublication) {
+      groupId libraryGroupId
+      artifactId libraryArtifactId
+      version libraryVersion
+      artifact(sourceJar)
+      artifact("$buildDir/outputs/aar/${artifactId}-release.aar")
+
+      pom.withXml {
+        def dependenciesNode = asNode().appendNode('dependencies')
+        def kotlin = dependenciesNode.appendNode('dependency')
+        kotlin.appendNode('groupId', 'org.jetbrains.kotlin')
+        kotlin.appendNode('artifactId', 'kotlin-stdlib-jdk7')
+        kotlin.appendNode('version', '[1.2.61,2.0.0)')
+        def reflect = dependenciesNode.appendNode('dependency')
+        reflect.appendNode('groupId', 'org.jetbrains.kotlin')
+        reflect.appendNode('artifactId', 'kotlin-reflect')
+        reflect.appendNode('version', '[1.2.61,2.0.0)')
+        def websocket = dependenciesNode.appendNode('dependency')
+        websocket.appendNode('groupId', 'com.neovisionaries')
+        websocket.appendNode('artifactId', 'nv-websocket-client')
+        websocket.appendNode('version', '2.5')
+        def rxjava = dependenciesNode.appendNode('dependency')
+        rxjava.appendNode('groupId', 'io.reactivex.rxjava2')
+        rxjava.appendNode('artifactId', 'rxjava')
+        rxjava.appendNode('version', '[2.2.5,3.0.0)')
+        def rxandroid = dependenciesNode.appendNode('dependency')
+        rxandroid.appendNode('groupId', 'io.reactivex.rxjava2')
+        rxandroid.appendNode('artifactId', 'rxandroid')
+        rxandroid.appendNode('version', '[2.1.0,3.0.0)')
+        def versionPlugin = asNode()
+          .appendNode('build')
+          .appendNode('plugins')
+          .appendNode('plugin')
+        versionPlugin.appendNode('groupId', 'org.codehaus.mojo')
+        versionPlugin.appendNode('artifactId', 'versions-maven-plugin')
+        versionPlugin.appendNode('version', '2.1')
+        def configuration = versionPlugin.appendNode('configuration')
+        configuration.appendNode('rulesUri', 'https://raw.githubusercontent.com/BLOCKvIO/android-sdk/master/maven-rules.xml')
+      }
+
+    }
+  }
+  repositories {
+    maven {
+      url "https://maven.blockv.io/artifactory/BLOCKv/"
+      credentials {
+        username = "${blockv_artifactory_username}"
+        password = "${blockv_artifactory_password}"
+      }
+    }
+  }
+}
